@@ -1,0 +1,77 @@
+#version 4  2012.02.19
+
+#check version of grub4dos
+checkrange 20120201:-1 read 0x8278 || pause --wait=3 Please use grub4dos-0.4.5c-2012-02-01 or later! && exit 1
+
+write (md)0x220+1 !BAT\necho -n -P:0000 $[0133]                       --- Abhijeet's Multiboot USB Drive---                               \0
+initscript (md)0x220+1
+
+write 0x8274 0x2001
+
+color black/cyan yellow/cyan
+#timeout 5
+default 1
+debug 1
+
+#uncomment this for a hi-res background - but changes menu behaviour
+gfxmenu /message
+
+#comment this next line out if you don't want a background image at all
+#splashimage /back.xpm.gz
+#foreground 555599
+#background 661100
+
+clear
+
+title -----------  Disk Management  -------------
+root
+
+iftitle [if exist /_iso/Tools/DiskDirectorSuite11.iso] Acronis Disk Director Suite 11
+find --set-root /_iso/Tools/DiskDirectorSuite11.iso
+map /_iso/Tools/DiskDirectorSuite11.iso (hd32)
+map --hook
+root (hd32)
+chainloader (hd32)
+
+iftitle [if exist /_iso/Tools/ParagonPatitionMgrPersonal11.iso] Paragon Partition MGR Personal 11
+find --set-root /_iso/Tools/ParagonPatitionMgrPersonal11.iso
+map /_iso/Tools/ParagonPatitionMgrPersonal11.iso (hd32)
+map --hook
+root (hd32)
+chainloader (hd32)
+
+title Parted Magic 2012-04
+find --set-root /_iso/Tools/pmagic_2012_04_21.iso   
+map /_iso/Tools/pmagic_2012_04_21.iso (hd32) || map --mem  /_iso/Tools/pmagic_2012_04_21.iso (hd32)   
+map --hook    
+root (hd32)   
+kernel /pmagic/bzImage  iso_filename=/_iso/Tools/pmagic_2012_04_21.iso  noapic load_ramdisk=1 prompt_ramdisk=0 rw vga=normal loglevel=9 max_loop=256 vmalloc=256MiB  
+initrd /pmagic/initrd.img
+
+
+title Back to Main Menu
+configfile /Menu.lst
+
+title
+root
+
+title ----------- System Option -------------
+root
+
+title Boot from 1st Hard Disk
+map (hd0) (hd1)
+map (hd1) (hd0)
+map --hook
+chainloader (hd0)+1
+rootnoverify (hd0)
+
+title Reboot  \nReboot system
+savedefault --wait=2
+reboot
+
+title Switch Off system
+savedefault --wait=2
+halt
+
+title Reload menu\nReload the menu.lst file
+configfile /menu.lst

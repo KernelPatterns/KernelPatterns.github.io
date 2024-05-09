@@ -1,0 +1,148 @@
+#Author: Abhijeet Nayak
+#Date 2013.11.1
+
+#check version of grub4dos
+checkrange 20120201:-1 read 0x8278 || pause --wait=3 Please use grub4dos-0.4.5c-2012-02-01 or later! && exit 1
+
+write (md)0x220+1 !BAT\necho -n -P:0000 $[0133]                       --- Abhijeet's Multiboot USB Drive---                               \0
+initscript (md)0x220+1
+
+write 0x8274 0x2001
+
+color black/cyan yellow/cyan
+#timeout 5
+default 1
+debug 1
+
+#uncomment this for a hi-res background - but changes menu behaviour
+gfxmenu /message
+
+#comment this next line out if you don't want a background image at all
+#splashimage /back.xpm.gz
+#foreground 555599
+#background 661100
+
+clear
+
+title --- Abhijeet's Multi Boot USB Drive ---
+root
+title -----------  System Tools -------------
+root
+
+title Partition Backup & Restore
+configfile /BackUpRestoreMenu.lst
+
+title Disk Management Tools
+configfile /DiskManagemenMenu.lst
+
+title Other Tools
+configfile /OtherToolsMenu.lst
+
+
+title ---------- Operating Systems ----------
+root
+
+title Windows 8 Professional 64Bit
+debug off
+set MYISO=Win8.iso
+dd if=()/firadisk/auwin8.xml of=()/AutoUnattend.xml
+dd if=()/firadisk/spaces.txt of=()/firadisk/ISONAME.CMD
+write ()/firadisk/ISONAME.CMD SET MYISO=\\_iso\\Windows\\%MYISO%\r\n
+map --mem (md)0x800+4 (99)
+map /_iso/Windows/%MYISO% (0xff)
+map (hd0) (hd1)
+map (hd1) (hd0)
+map --hook
+write (99) [FiraDisk]\nStartOptions=cdrom,vmem=find:/_iso/Windows/%MYISO%;\n\0
+chainloader (0xff)/BOOTMGR || chainloader (0xff)
+
+iftitle [if exist /_iso/Windows/Win7.iso] WINDOWS 7 SP1 32Bit & 64Bit
+debug off
+set MYISO=Win7.iso
+dd if=()/firadisk/au.xml of=()/AutoUnattend.xml
+dd if=()/firadisk/spaces.txt of=()/firadisk/ISONAME.CMD
+write ()/firadisk/ISONAME.CMD SET MYISO=\\_iso\\Windows\\%MYISO%\r\n
+map --mem (md)0x800+4 (99)
+echo Mapping /_iso/Windows/%MYISO% as an optical drive...
+map /_iso/Windows/%MYISO% (0xff)
+map (hd0) (hd1)
+map (hd1) (hd0)
+map --hook
+write (99) [FiraDisk]\nStartOptions=cdrom,vmem=find:/_iso/Windows/%MYISO%;\n\0
+chainloader (0xff)/BOOTMGR || chainloader (0xff)
+
+# note: --mem is not needed to load XP.ISO in this step
+iftitle [if exist /_iso/Windows/XPPROSP3.iso]Windows XP (Remember to select both AHCI driver AND winvbloc/FiraDisk driver )
+find --set-root --ignore-floppies --ignore-cd /winvblock.ima.gz
+map --mem /winvblock.ima.gz (fd0)
+map --mem /winvblock.ima.gz  (fd1)
+# if this loads the ISO into memory slowly - then you need to run WinContig on the ISO file on your USB drive to speed it up!
+map  /_iso/Windows/XPPROSP3.iso (0xff) || map  --mem /_iso/Windows/XPPROSP3.iso (0xff)
+map (hd0) (hd1)
+map (hd1) (hd0)
+map --hook
+root (0xff)
+chainloader (0xff)/i386/setupldr.bin || chainloader (0xff)/I386/SETUPLDR.BIN || chainloader (0xff)
+pause If you have an AHCI HDD you MUST press F6 when prompted, then hit S to select WinVBlock or FiraDisk (recommended) driver, then hit S again to select your AHCI driver (e.g. Atom Netbook=WinVBlock+ICH7R/DH, DQ67 series 6=FiraDisk+Desktop,Workstation,Server Express)
+pause Now quickly hit [Enter] twice (and then F6 if you need to install an AHCI driver) ...
+
+title Linux Mint 16 64Bit
+find --set-root /_iso/Linux/linuxmint16.iso
+map /_iso/Linux/linuxmint16.iso (0xff)  || map --mem /_iso/Linux/linuxmint16.iso (0xff)
+map --hook
+root (0xff)
+kernel /casper/vmlinuz  cdrom-detect/try-usb=true file=/cdrom/preseed/ubuntu.seed noprompt boot=casper only-ubiquity iso-scan/filename=/_iso/Linux/linuxmint16.iso splash
+initrd /casper/initrd.lz
+
+title Ubuntu 13.10 Desktop
+find --set-root /_iso/Linux/ubuntu1310.iso
+map /_iso/Linux/ubuntu1310.iso (0xff)  || map --mem /_iso/Linux/ubuntu1310.iso (0xff)
+map --hook
+root (0xff)
+kernel /casper/vmlinuz.efi  cdrom-detect/try-usb=true file=/cdrom/preseed/ubuntu.seed noprompt boot=casper only-ubiquity iso-scan/filename=/_iso/Linux/ubuntu1310.iso splash
+initrd /casper/initrd.lz
+
+title Ubuntu 13.04 Desktop
+find --set-root /_iso/Linux/ubuntu1304.iso
+map /_iso/Linux/ubuntu1304.iso (0xff)  || map --mem /_iso/Linux/ubuntu1304.iso (0xff)
+map --hook
+root (0xff)
+kernel /casper/vmlinuz.efi  cdrom-detect/try-usb=true file=/cdrom/preseed/ubuntu.seed noprompt boot=casper only-ubiquity iso-scan/filename=/_iso/Linux/ubuntu1304.iso splash
+initrd /casper/initrd.lz
+
+title Xubuntu 13.04 Desktop
+find --set-root /_iso/Linux/xubuntu1304.iso
+map /_iso/Linux/xubuntu1304.iso (0xff)  || map --mem /_iso/Linux/xubuntu1304.iso (0xff)
+map --hook
+root (0xff)
+kernel /casper/vmlinuz  cdrom-detect/try-usb=true file=/cdrom/preseed/ubuntu.seed noprompt boot=casper only-ubiquity iso-scan/filename=/_iso/Linux/xubuntu1304.iso splash
+initrd /casper/initrd.lz
+
+title Ubuntu 12.04 Desktop
+find --set-root /_iso/Linux/ubuntu1204.iso
+map /_iso/Linux/ubuntu1204.iso (0xff)  || map --mem /_iso/Linux/ubuntu1204.iso (0xff)
+map --hook
+root (0xff)
+kernel /casper/vmlinuz  cdrom-detect/try-usb=true file=/cdrom/preseed/ubuntu.seed noprompt boot=casper only-ubiquity iso-scan/filename=/_iso/Linux/ubuntu1204.iso splash
+initrd /casper/initrd.lz
+
+#title
+#root
+
+title ----------- System Option -------------
+root
+
+title Boot from 1st Hard Disk
+map (hd0) (hd1)
+map (hd1) (hd0)
+map --hook
+chainloader (hd0)+1
+rootnoverify (hd0)
+
+title Reboot  \nReboot system
+savedefault --wait=2
+reboot
+
+title Switch Off system
+savedefault --wait=2
+halt

@@ -191,6 +191,9 @@ runs:
       id: variables
       shell: bash
       env:
+        IMAGE_NAME: "${{ inputs.image_name }}"
+        HUB_USERNAME: "${{ inputs.hub_username }}"
+        HUB_PASSWORD: "${{ inputs.hub_password }}"
         MAX_DELETIONS: 15
       run: |
         echo "Fetching manifests to delete..."

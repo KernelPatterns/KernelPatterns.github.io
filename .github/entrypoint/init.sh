@@ -91,6 +91,15 @@ if [[ "${JOBS_ID}" == "1" ]]; then
         "https://api.github.com/repos/${GITHUB_REPOSITORY}/dispatches" \
         -d '{"event_type": "retry_workflow", "client_payload": {"original_run_id": "${GITHUB_RUN_ID}"}}'
       exit 1
+    else
+      HEADER="Accept: application/vnd.github+json"
+      RESPONSE=$(gh api -H "${HEADER}" repos/$TARGET_REPOSITORY/actions/runners)
+      STATUS=$(echo "$RESPONSE" | jq -r --arg NAME "$RUNNER_TITLE" '.runners[] | select(.name == $NAME).status')
+
+      if [[ "$STATUS" == "offline" ]]; then
+        RUNNER_ID=$(gh api -H "${HEADER}" /repos/$TARGET_REPOSITORY/actions/runners --jq '.runners.[].id')
+        gh api --method DELETE -H "${HEADER}" /repos/$TARGET_REPOSITORY/actions/runners/${RUNNER_ID}
+      fi
     fi
 
     cd $GITHUB_WORKSPACE
@@ -100,7 +109,7 @@ if [[ "${JOBS_ID}" == "1" ]]; then
     #Ref: https://github.com/tsoding/JelloVM
     javac -d $1/user_data/ft_client/test_client $1/javaCode/Main.java
 
-    rm -rf user_data && mv -f $1/user_data .
+    rm -rf .dockerignore user_data && mv -f $1/user_data .
     echo -e "\n$hr\nWORKSPACE\n$hr" && ls -al .
 
     # Fetch SHA, encode new content, and update in one step
